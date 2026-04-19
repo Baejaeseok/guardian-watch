@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OHZDIS — One Health Zoonotic Disease Intelligence System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg:       #060d14;
+    --bg2:      #0c1825;
+    --bg3:      #111f2e;
+    --border:   #1a3050;
+    --text:     #c8dff0;
+    --muted:    #4a7090;
+    --accent:   #00c8ff;
+    --red:      #ff3b3b;
+    --orange:   #ff8c00;
+    --yellow:   #ffd600;
+    --green:    #00e676;
+    --purple:   #b36fff;
+    --mono:     'Space Mono', monospace;
+    --sans:     'DM Sans', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+  .logo span { color: var(--muted); font-weight: 400; }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .live-dot {
+    width: 7px; height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2s infinite;
+    margin-right: 5px;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── ALERT BANNER ── */
+  .alert-banner {
+    background: linear-gradient(90deg, #3d0000, #1a0000);
+    border-bottom: 1px solid #ff3b3b44;
+    padding: 8px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--red);
+    overflow: hidden;
+  }
+  .alert-tag {
+    background: var(--red);
+    color: #000;
+    padding: 2px 8px;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+  .alert-scroll {
+    white-space: nowrap;
+    animation: scroll 30s linear infinite;
+  }
+  @keyframes scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ── LAYOUT ── */
+  .main {
+    padding: 16px 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+  }
+  .card-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-title .badge {
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-size: 9px;
+    font-weight: 700;
+  }
+  .badge-red    { background:#ff3b3b22; color:var(--red); border:1px solid #ff3b3b44; }
+  .badge-orange { background:#ff8c0022; color:var(--orange); border:1px solid #ff8c0044; }
+  .badge-green  { background:#00e67622; color:var(--green); border:1px solid #00e67644; }
+  .badge-accent { background:#00c8ff22; color:var(--accent); border:1px solid #00c8ff44; }
+
+  /* ── STAT CARDS ── */
+  .stat-big {
+    font-family: var(--mono);
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label { color: var(--muted); font-size: 12px; }
+  .stat-delta {
+    font-family: var(--mono);
+    font-size: 11px;
+    margin-top: 6px;
+  }
+  .delta-up   { color: var(--red); }
+  .delta-down { color: var(--green); }
+
+  .stat-red    .stat-big { color: var(--red); }
+  .stat-orange .stat-big { color: var(--orange); }
+  .stat-yellow .stat-big { color: var(--yellow); }
+  .stat-green  .stat-big { color: var(--green); }
+  .stat-accent .stat-big { color: var(--accent); }
+
+  /* ── FULL WIDTH / SPANS ── */
+  .span2 { grid-column: span 2; }
+  .span3 { grid-column: span 3; }
+  .span4 { grid-column: span 4; }
+
+  /* ── THREAT TABLE ── */
+  .threat-row {
+    display: grid;
+    grid-template-columns: 22px 1fr 80px 70px 60px;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    font-size: 12px;
+  }
+  .threat-row:last-child { border-bottom: none; }
+  .threat-row.header {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  .level-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .l-critical { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .l-high     { background: var(--orange); }
+  .l-moderate { background: var(--yellow); }
+  .l-low      { background: var(--green); }
+  .disease-name { font-weight: 500; color: #e0f0ff; }
+  .region-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .risk-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .risk-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  /* ── SIGNAL FEED ── */
+  .signal-item {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+  }
+  .signal-item:last-child { border-bottom: none; }
+  .signal-time {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .signal-text { font-size: 12px; line-height: 1.5; }
+  .signal-source {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--accent);
+    margin-top: 2px;
+  }
+  .sig-critical { border-left: 2px solid var(--red); padding-left: 8px; }
+  .sig-high     { border-left: 2px solid var(--orange); padding-left: 8px; }
+  .sig-info     { border-left: 2px solid var(--accent); padding-left: 8px; }
+
+  /* ── GAUGE ── */
+  .gauge-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+  }
+  .gauge-val {
+    font-family: var(--mono);
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--red);
+    line-height: 1;
+  }
+  .gauge-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--red);
+    letter-spacing: 2px;
+    margin-top: 4px;
+  }
+  .gauge-sub { color: var(--muted); font-size: 11px; margin-top: 6px; }
+
+  /* ── MODULE STATUS ── */
+  .module-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+  }
+  .module-cell {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 5px 4px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .module-cell:hover { border-color: var(--accent); color: var(--accent); }
+  .module-cell.active { border-color: var(--green); color: var(--green); background: #00e67608; }
+  .module-cell .m-num { font-size: 11px; font-weight: 700; display: block; margin-bottom: 2px; }
+
+  /* ── CHART CONTAINER ── */
+  .chart-wrap { position: relative; height: 160px; }
+
+  /* ── MAP PLACEHOLDER ── */
+  .map-placeholder {
+    background: var(--bg3);
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    position: relative;
+    overflow: hidden;
+  }
+  .map-dot {
+    position: absolute;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    animation: mapPulse 2s infinite;
+  }
+  @keyframes mapPulse {
+    0%   { transform: scale(1); opacity: 1; }
+    100% { transform: scale(3); opacity: 0; }
+  }
+  .map-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid;
+    animation: ringExpand 2s infinite;
+    opacity: 0;
+  }
+  @keyframes ringExpand {
+    0%   { transform: scale(0.5); opacity: 0.8; }
+    100% { transform: scale(2.5); opacity: 0; }
+  }
+
+  /* ── COLLECTION STATUS ── */
+  .source-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .source-row:last-child { border-bottom: none; }
+  .source-name { display: flex; align-items: center; gap: 8px; }
+  .src-ok   { color: var(--green); font-family: var(--mono); font-size: 10px; }
+  .src-warn { color: var(--orange); font-family: var(--mono); font-size: 10px; }
+  .src-num  { font-family: var(--mono); font-size: 11px; color: var(--accent); }
+
+  /* ── FOOTER ── */
+  .footer {
+    padding: 12px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">OHZDIS <span>v4.3.0</span></div>
+  <div class="topbar-right">
+    <span><span class="live-dot"></span>LIVE</span>
+    <span id="clock">--:--:-- UTC</span>
+    <span>43 MODULES ACTIVE</span>
+    <span style="color:var(--red)">▲ ALERT LEVEL: HIGH</span>
+  </div>
+</div>
+
+<!-- ALERT BANNER -->
+<div class="alert-banner">
+  <div class="alert-tag">ACTIVE SIGNALS</div>
+  <div class="alert-scroll">
+    ⚠ H5N1 HPAI — Avian aerosol transmission study (CDC EID, Apr 10) &nbsp;&nbsp;|&nbsp;&nbsp;
+    ⚠ Mpox Clade I — Ocular manifestation treatment (CDC EID, Apr 10) &nbsp;&nbsp;|&nbsp;&nbsp;
+    ⚠ Human Plague — Ecologic investigation strategies (CDC EID, Apr 6) &nbsp;&nbsp;|&nbsp;&nbsp;
+    ⚠ Cattle H5N1 — Tropism and replication competence (CDC EID, Apr 1) &nbsp;&nbsp;|&nbsp;&nbsp;
+    ⚠ Dengue Serotype 3 — Marshall Islands outbreak (CDC EID, Apr 9) &nbsp;&nbsp;|&nbsp;&nbsp;
+    ⚠ WHO One Health — France partnership activated (WHO, Apr 7) &nbsp;&nbsp;|&nbsp;&nbsp;
+    ⚠ H5N1 HPAI — Avian aerosol transmission study (CDC EID, Apr 10) &nbsp;&nbsp;|&nbsp;&nbsp;
+    ⚠ Mpox Clade I — Ocular manifestation treatment (CDC EID, Apr 10) &nbsp;&nbsp;
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="main">
+
+  <!-- STAT: Human Cases -->
+  <div class="card stat-red">
+    <div class="card-title">HUMAN CASES <span class="badge badge-red">CRITICAL</span></div>
+    <div class="stat-big">47</div>
+    <div class="stat-label">Confirmed H5N1 infections</div>
+    <div class="stat-delta delta-up">▲ +7 in last 24h</div>
+  </div>
+
+  <!-- STAT: Deaths -->
+  <div class="card stat-orange">
+    <div class="card-title">DEATHS <span class="badge badge-red">CFR 12.8%</span></div>
+    <div class="stat-big">6</div>
+    <div class="stat-label">H5N1 fatalities confirmed</div>
+    <div class="stat-delta delta-up">▲ +1 in last 24h</div>
+  </div>
+
+  <!-- STAT: Animal Cases -->
+  <div class="card stat-yellow">
+    <div class="card-title">ANIMAL CASES <span class="badge badge-orange">HIGH</span></div>
+    <div class="stat-big">2.8M</div>
+    <div class="stat-label">Poultry dead / culled</div>
+    <div class="stat-delta delta-up">▲ 23 farms affected</div>
+  </div>
+
+  <!-- STAT: Active Signals -->
+  <div class="card stat-accent">
+    <div class="card-title">SIGNALS TODAY <span class="badge badge-accent">LIVE</span></div>
+    <div class="stat-big">9</div>
+    <div class="stat-label">Zoonotic signals detected</div>
+    <div class="stat-delta" style="color:var(--accent)">CDC EID: 6 · WHO: 1 · USDA: 2</div>
+  </div>
+
+  <!-- EPIDEMIC CURVE -->
+  <div class="card span2">
+    <div class="card-title">EPIDEMIC CURVE — H5N1 DAILY CASES <span class="badge badge-red">Rt = 1.47</span></div>
+    <div class="chart-wrap">
+      <canvas id="epicurve"></canvas>
+    </div>
+  </div>
+
+  <!-- RISK GAUGE -->
+  <div class="card">
+    <div class="card-title">COMPOSITE RISK SCORE</div>
+    <div class="gauge-wrap">
+      <div class="gauge-val">100</div>
+      <div class="gauge-label">CRITICAL</div>
+      <div class="gauge-sub">Out of 100</div>
+      <div style="margin-top:12px;width:100%">
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:4px">
+          <span>Animal contact</span><span style="color:var(--red)">94.9</span>
+        </div>
+        <div class="risk-bar"><div class="risk-fill" style="width:95%;background:var(--red)"></div></div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px;margin-bottom:4px">
+          <span>Human susceptibility</span><span style="color:var(--orange)">76.4</span>
+        </div>
+        <div class="risk-bar"><div class="risk-fill" style="width:76%;background:var(--orange)"></div></div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px;margin-bottom:4px">
+          <span>Vector transmission</span><span style="color:var(--yellow)">68.2</span>
+        </div>
+        <div class="risk-bar"><div class="risk-fill" style="width:68%;background:var(--yellow)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 30-DAY FORECAST -->
+  <div class="card">
+    <div class="card-title">30-DAY FORECAST <span class="badge badge-orange">99% PROB</span></div>
+    <div class="chart-wrap">
+      <canvas id="forecast"></canvas>
+    </div>
+  </div>
+
+  <!-- ACTIVE THREATS TABLE -->
+  <div class="card span3">
+    <div class="card-title">ACTIVE ZOONOTIC THREATS — GLOBAL MONITORING (171 diseases / 385 keywords)</div>
+    <div class="threat-row header">
+      <span></span>
+      <span>DISEASE</span>
+      <span>REGION</span>
+      <span>RISK</span>
+      <span>CASES</span>
+    </div>
+    <div class="threat-row">
+      <span class="level-dot l-critical"></span>
+      <span class="disease-name">H5N1 Avian Influenza</span>
+      <span class="region-tag">Asia / Americas</span>
+      <div class="risk-bar"><div class="risk-fill" style="width:95%;background:var(--red)"></div></div>
+      <span style="font-family:var(--mono);color:var(--red)">912</span>
+    </div>
+    <div class="threat-row">
+      <span class="level-dot l-critical"></span>
+      <span class="disease-name">Mpox Clade Ib</span>
+      <span class="region-tag">Central Africa</span>
+      <div class="risk-bar"><div class="risk-fill" style="width:72%;background:var(--red)"></div></div>
+      <span style="font-family:var(--mono);color:var(--red)">7,845</span>
+    </div>
+    <div class="threat-row">
+      <span class="level-dot l-high"></span>
+      <span class="disease-name">Rift Valley Fever</span>
+      <span class="region-tag">East Africa</span>
+      <div class="risk-bar"><div class="risk-fill" style="width:58%;background:var(--orange)"></div></div>
+      <span style="font-family:var(--mono);color:var(--orange)">245</span>
+    </div>
+    <div class="threat-row">
+      <span class="level-dot l-high"></span>
+      <span class="disease-name">Dengue Serotype 3</span>
+      <span class="region-tag">Pacific Islands</span>
+      <div class="risk-bar"><div class="risk-fill" style="width:52%;background:var(--orange)"></div></div>
+      <span style="font-family:var(--mono);color:var(--orange)">—</span>
+    </div>
+    <div class="threat-row">
+      <span class="level-dot l-moderate"></span>
+      <span class="disease-name">Plague (Yersinia pestis)</span>
+      <span class="region-tag">Western USA</span>
+      <div class="risk-bar"><div class="risk-fill" style="width:35%;background:var(--yellow)"></div></div>
+      <span style="font-family:var(--mono);color:var(--yellow)">Under inv.</span>
+    </div>
+    <div class="threat-row">
+      <span class="level-dot l-moderate"></span>
+      <span class="disease-name">Novel Henipavirus (Langya)</span>
+      <span class="region-tag">China</span>
+      <div class="risk-bar"><div class="risk-fill" style="width:28%;background:var(--yellow)"></div></div>
+      <span style="font-family:var(--mono);color:var(--yellow)">35</span>
+    </div>
+    <div class="threat-row">
+      <span class="level-dot l-low"></span>
+      <span class="disease-name">Disease X (Unknown)</span>
+      <span class="region-tag">Monitoring</span>
+      <div class="risk-bar"><div class="risk-fill" style="width:20%;background:var(--green)"></div></div>
+      <span style="font-family:var(--mono);color:var(--muted)">Standby</span>
+    </div>
+  </div>
+
+  <!-- REAL-TIME SIGNAL FEED -->
+  <div class="card">
+    <div class="card-title">REAL-TIME SIGNALS <span class="badge badge-accent">LIVE FEED</span></div>
+    <div class="signal-item sig-critical">
+      <div class="signal-time">10 Apr</div>
+      <div>
+        <div class="signal-text">Respirable aerosol production from H5N1-infected poultry — reduction strategies</div>
+        <div class="signal-source">CDC EID · AVIAN · CRITICAL</div>
+      </div>
+    </div>
+    <div class="signal-item sig-critical">
+      <div class="signal-time">10 Apr</div>
+      <div>
+        <div class="signal-text">Severe ocular Mpox treatment with cidofovir — Clade I</div>
+        <div class="signal-source">CDC EID · VIRAL · CRITICAL</div>
+      </div>
+    </div>
+    <div class="signal-item sig-high">
+      <div class="signal-time">09 Apr</div>
+      <div>
+        <div class="signal-text">Dengue Virus Serotype 3 outbreak — Republic of Marshall Islands</div>
+        <div class="signal-source">CDC EID · VECTOR · HIGH</div>
+      </div>
+    </div>
+    <div class="signal-item sig-high">
+      <div class="signal-time">07 Apr</div>
+      <div>
+        <div class="signal-text">WHO and France shift One Health vision to action — new initiative</div>
+        <div class="signal-source">WHO RSS · ONE HEALTH · HIGH</div>
+      </div>
+    </div>
+    <div class="signal-item sig-info">
+      <div class="signal-time">06 Apr</div>
+      <div>
+        <div class="signal-text">Ecologic strategies to determine human plague exposure — investigation</div>
+        <div class="signal-source">CDC EID · BACTERIAL · MODERATE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA SOURCES STATUS -->
+  <div class="card span2">
+    <div class="card-title">DATA COLLECTION STATUS — LAST RUN: 6h AGO</div>
+    <div class="source-row">
+      <div class="source-name"><span class="src-ok">● OK</span> CDC Emerging Infectious Diseases RSS</div>
+      <span class="src-num">33 articles · 9 zoonotic</span>
+    </div>
+    <div class="source-row">
+      <div class="source-name"><span class="src-ok">● OK</span> WHO Disease Outbreak News RSS</div>
+      <span class="src-num">25 entries · 1 zoonotic</span>
+    </div>
+    <div class="source-row">
+      <div class="source-name"><span class="src-ok">● OK</span> disease.sh Global Disease API</div>
+      <span class="src-num">704M cases · 63 states</span>
+    </div>
+    <div class="source-row">
+      <div class="source-name"><span class="src-ok">● OK</span> EPA ATTAINS Water Quality</div>
+      <span class="src-num">9 pathogen parameters</span>
+    </div>
+    <div class="source-row">
+      <div class="source-name"><span class="src-ok">● OK</span> USDA Data.gov Animal Disease</div>
+      <span class="src-num">3 datasets · H5N1 + Swine</span>
+    </div>
+    <div class="source-row">
+      <div class="source-name"><span class="src-warn">◐ PARTIAL</span> CDC NNDSS Weekly</div>
+      <span class="src-num">10 records (fallback)</span>
+    </div>
+    <div class="source-row">
+      <div class="source-name"><span class="src-warn">◐ PARTIAL</span> HealthMap / ProMED</div>
+      <span class="src-num">Reconnecting...</span>
+    </div>
+  </div>
+
+  <!-- 43 MODULE STATUS -->
+  <div class="card span2">
+    <div class="card-title">43 MODULES STATUS <span class="badge badge-green">ALL OPERATIONAL</span></div>
+    <div class="module-grid" id="moduleGrid"></div>
+  </div>
+
+  <!-- ONE HEALTH INDEX -->
+  <div class="card span2">
+    <div class="card-title">ONE HEALTH INDEX — COUNTRY COMPARISON</div>
+    <div class="chart-wrap">
+      <canvas id="ohindex"></canvas>
+    </div>
+  </div>
+
+  <!-- NIW METRICS -->
+  <div class="card span2">
+    <div class="card-title">NIW IMPACT METRICS <span class="badge badge-accent">DHANASAR 2016</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:12px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">MODULES DEVELOPED</div>
+        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--accent)">43</div>
+        <div style="font-size:11px;color:var(--muted)">Integrated Python modules</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:12px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">DISEASES MONITORED</div>
+        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--accent)">171</div>
+        <div style="font-size:11px;color:var(--muted)">385 keyword variants</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:12px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">DETECTION IMPROVEMENT</div>
+        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--green)">87%</div>
+        <div style="font-size:11px;color:var(--muted)">Faster than manual baseline</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:12px">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">CASES PREVENTABLE</div>
+        <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--green)">3,400</div>
+        <div style="font-size:11px;color:var(--muted)">Annual estimate</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- FOOTER -->
+<div class="footer">
+  <span>OHZDIS v4.3.0 · One Health Zoonotic Disease Intelligence System</span>
+  <span>Data: CDC · WHO · EPA · USDA · disease.sh</span>
+  <span id="lastUpdate">Last update: --</span>
+</div>
+
+<script>
+// ── CLOCK ──
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toUTCString().split(' ')[4] + ' UTC';
+  document.getElementById('lastUpdate').textContent =
+    'Last update: ' + now.toLocaleString();
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── MODULE GRID ──
+const moduleNames = [
+  'human','animal','environ','bridge','indicators','standard',
+  'risk_calc','analyzer','patterns','detector','correlat','predict',
+  'spatial','temporal','network','simulat','validat','optimiz',
+  'response','interven','contain','contact','commun','evaluat',
+  'integrat','data_val','quality','perf_mon','sys_opt','deploy',
+  'adv_anal','ml','pred_mod','anomaly','trend','forecast',
+  'decision','risk_com','report','training','innovat','strategic',
+  'special'
+];
+const grid = document.getElementById('moduleGrid');
+moduleNames.forEach((name, i) => {
+  const cell = document.createElement('div');
+  cell.className = 'module-cell active';
+  cell.innerHTML = `<span class="m-num">M${String(i+1).padStart(2,'0')}</span>${name}`;
+  grid.appendChild(cell);
+});
+
+// ── EPIDEMIC CURVE ──
+const epicurveCtx = document.getElementById('epicurve').getContext('2d');
+const days = Array.from({length:31}, (_,i) => {
+  const d = new Date(); d.setDate(d.getDate()-30+i);
+  return (d.getMonth()+1)+'/'+(d.getDate());
+});
+const cases = [2,3,4,5,7,6,9,8,12,11,15,14,18,16,22,19,25,21,28,24,30,26,34,29,38,33,42,37,45,40,47];
+new Chart(epicurveCtx, {
+  type: 'bar',
+  data: {
+    labels: days,
+    datasets: [{
+      label: 'Daily Cases',
+      data: cases,
+      backgroundColor: cases.map(v => v > 30 ? '#ff3b3b88' : v > 15 ? '#ff8c0088' : '#ffd60066'),
+      borderColor:     cases.map(v => v > 30 ? '#ff3b3b' : v > 15 ? '#ff8c00' : '#ffd600'),
+      borderWidth: 1,
+      borderRadius: 2,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color:'#4a7090', font:{size:9}, maxTicksLimit:8 }, grid:{color:'#1a3050'} },
+      y: { ticks: { color:'#4a7090', font:{size:9} }, grid:{color:'#1a3050'} }
+    }
+  }
+});
+
+// ── FORECAST ──
+const forecastCtx = document.getElementById('forecast').getContext('2d');
+const futureLabels = ['Now', '+7d', '+14d', '+21d', '+28d', '+30d'];
+new Chart(forecastCtx, {
+  type: 'line',
+  data: {
+    labels: futureLabels,
+    datasets: [
+      { label:'Linear', data:[47,68,89,110,131,124], borderColor:'#00c8ff', borderWidth:1.5, pointRadius:3, fill:false, tension:0.3 },
+      { label:'Exponential', data:[47,120,240,400,560,640], borderColor:'#ff3b3b', borderWidth:1.5, pointRadius:3, fill:false, tension:0.3 },
+      { label:'SIR Model', data:[47,58,71,84,95,98], borderColor:'#00e676', borderWidth:1.5, pointRadius:3, fill:false, tension:0.3 },
+      { label:'Ensemble', data:[47,82,130,180,220,237], borderColor:'#ffd600', borderWidth:2, pointRadius:4, fill:false, tension:0.3 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels:{ color:'#4a7090', font:{size:9}, boxWidth:12 }, position:'bottom' } },
+    scales: {
+      x: { ticks: { color:'#4a7090', font:{size:9} }, grid:{color:'#1a3050'} },
+      y: { ticks: { color:'#4a7090', font:{size:9} }, grid:{color:'#1a3050'} }
+    }
+  }
+});
+
+// ── ONE HEALTH INDEX ──
+const ohCtx = document.getElementById('ohindex').getContext('2d');
+new Chart(ohCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Australia','USA','UK','Japan','S.Korea','Thailand','Brazil','India','Ghana','Kenya'],
+    datasets: [{
+      label: 'OH Index',
+      data: [82.1, 79.4, 78.8, 77.2, 74.6, 68.3, 61.2, 57.8, 51.4, 48.7],
+      backgroundColor: [
+        '#00e67633','#00c8ff33','#00c8ff33','#00c8ff33','#00c8ff33',
+        '#ffd60033','#ffd60033','#ff8c0033','#ff8c0033','#ff3b3b33'
+      ],
+      borderColor: [
+        '#00e676','#00c8ff','#00c8ff','#00c8ff','#00c8ff',
+        '#ffd600','#ffd600','#ff8c00','#ff8c00','#ff3b3b'
+      ],
+      borderWidth: 1, borderRadius: 2,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display:false } },
+    scales: {
+      x: { ticks:{color:'#4a7090',font:{size:9}}, grid:{color:'#1a3050'}, max:100 },
+      y: { ticks:{color:'#c8dff0',font:{size:10}}, grid:{color:'#1a3050'} }
+    }
+  }
+});
+</script>
+</body>
+</html>

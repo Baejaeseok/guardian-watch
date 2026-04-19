@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OHZDIS Field Report</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root {
+  --bg:#060d14; --bg2:#0c1825; --bg3:#111f2e;
+  --border:#1a3050; --text:#c8dff0; --muted:#4a7090;
+  --accent:#00c8ff; --red:#ff3b3b; --orange:#ff8c00;
+  --yellow:#ffd600; --green:#00e676;
+  --mono:'Space Mono',monospace; --sans:'DM Sans',sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:var(--sans); font-size:14px; min-height:100vh; }
+
+.topbar {
+  background:var(--bg2); border-bottom:1px solid var(--border);
+  padding:0 24px; height:52px; display:flex; align-items:center;
+  justify-content:space-between;
+}
+.logo { font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); letter-spacing:2px; }
+.logo span { color:var(--muted); font-weight:400; }
+.nav-links { display:flex; gap:16px; }
+.nav-links a {
+  font-family:var(--mono); font-size:11px; color:var(--muted);
+  text-decoration:none; padding:6px 12px; border:1px solid transparent;
+  border-radius:2px; letter-spacing:1px;
+}
+.nav-links a:hover { border-color:var(--border); color:var(--text); }
+.nav-links a.active { border-color:var(--accent); color:var(--accent); }
+
+.container { max-width:900px; margin:0 auto; padding:24px; }
+
+.page-title {
+  font-family:var(--mono); font-size:11px; color:var(--muted);
+  letter-spacing:2px; text-transform:uppercase; margin-bottom:4px;
+}
+.page-heading { font-size:22px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.page-sub { color:var(--muted); font-size:13px; margin-bottom:24px; }
+
+/* ── TABS ── */
+.tabs { display:flex; gap:4px; margin-bottom:20px; }
+.tab {
+  font-family:var(--mono); font-size:11px; letter-spacing:1px;
+  padding:8px 16px; border:1px solid var(--border); border-radius:2px;
+  cursor:pointer; color:var(--muted); background:var(--bg2);
+}
+.tab.active { border-color:var(--accent); color:var(--accent); background:#00c8ff11; }
+.tab:hover:not(.active) { border-color:var(--border); color:var(--text); }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+
+/* ── CARDS / SECTIONS ── */
+.section {
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:4px; padding:20px; margin-bottom:16px;
+}
+.section-title {
+  font-family:var(--mono); font-size:10px; color:var(--muted);
+  letter-spacing:2px; text-transform:uppercase; margin-bottom:16px;
+  padding-bottom:10px; border-bottom:1px solid var(--border);
+  display:flex; justify-content:space-between; align-items:center;
+}
+.required-tag {
+  background:#ff3b3b22; color:var(--red); border:1px solid #ff3b3b44;
+  padding:2px 6px; font-size:9px; border-radius:2px;
+}
+
+/* ── FORM ELEMENTS ── */
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.form-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+.form-full { grid-column:1/-1; }
+
+.field { display:flex; flex-direction:column; gap:6px; }
+.field label {
+  font-family:var(--mono); font-size:10px; color:var(--muted);
+  letter-spacing:1px; text-transform:uppercase;
+}
+.field label .req { color:var(--red); margin-left:2px; }
+
+input, select, textarea {
+  background:var(--bg3); border:1px solid var(--border);
+  color:var(--text); font-family:var(--sans); font-size:13px;
+  padding:10px 12px; border-radius:2px; outline:none;
+  transition:border-color 0.2s;
+}
+input:focus, select:focus, textarea:focus { border-color:var(--accent); }
+select option { background:var(--bg3); }
+textarea { resize:vertical; min-height:80px; }
+
+input[type="number"] { font-family:var(--mono); }
+input[type="range"] { padding:4px 0; accent-color:var(--accent); }
+
+/* ── SEVERITY SELECTOR ── */
+.severity-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.severity-opt { display:none; }
+.severity-label {
+  border:1px solid var(--border); border-radius:3px; padding:10px;
+  text-align:center; cursor:pointer; transition:all 0.2s;
+}
+.severity-opt:checked + .severity-label { border-color:currentColor; font-weight:600; }
+.sev-low   .severity-label { color:#00e676; }
+.sev-mod   .severity-label { color:#ffd600; }
+.sev-high  .severity-label { color:#ff8c00; }
+.sev-crit  .severity-label { color:#ff3b3b; }
+.sev-low   input:checked + .severity-label { background:#00e67611; }
+.sev-mod   input:checked + .severity-label { background:#ffd60011; }
+.sev-high  input:checked + .severity-label { background:#ff8c0011; }
+.sev-crit  input:checked + .severity-label { background:#ff3b3b11; }
+
+/* ── SYMPTOM CHECKLIST ── */
+.checklist { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.check-item { display:flex; align-items:center; gap:8px; cursor:pointer; }
+.check-item input[type="checkbox"] { accent-color:var(--accent); width:14px; height:14px; }
+.check-item span { font-size:13px; }
+
+/* ── SUBMIT BUTTON ── */
+.submit-btn {
+  background:var(--accent); color:#000; font-family:var(--mono);
+  font-size:12px; font-weight:700; letter-spacing:2px;
+  padding:14px 32px; border:none; border-radius:2px; cursor:pointer;
+  width:100%; margin-top:8px; transition:opacity 0.2s;
+}
+.submit-btn:hover { opacity:0.85; }
+.submit-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.submit-btn.danger { background:var(--red); color:#fff; }
+
+/* ── ALERT LEVEL ── */
+.alert-indicator {
+  display:flex; align-items:center; gap:10px;
+  background:var(--bg3); border:1px solid var(--border);
+  border-radius:3px; padding:12px 16px; margin-bottom:16px;
+  font-family:var(--mono); font-size:11px;
+}
+.alert-dot { width:10px; height:10px; border-radius:50%; }
+
+/* ── SUCCESS / RESULT ── */
+.result-card {
+  display:none; background:var(--bg3); border-radius:4px;
+  padding:24px; margin-top:16px;
+}
+.result-card.show { display:block; }
+.result-title { font-family:var(--mono); font-size:13px; margin-bottom:12px; }
+.result-row {
+  display:flex; justify-content:space-between;
+  padding:8px 0; border-bottom:1px solid var(--border);
+  font-size:13px;
+}
+.result-row:last-child { border-bottom:none; }
+.result-key { color:var(--muted); font-family:var(--mono); font-size:11px; }
+.result-val { font-weight:500; }
+
+/* ── RECENT REPORTS ── */
+.report-item {
+  padding:12px; background:var(--bg3); border:1px solid var(--border);
+  border-radius:3px; margin-bottom:8px; cursor:pointer;
+  transition:border-color 0.2s;
+}
+.report-item:hover { border-color:var(--accent); }
+.report-header { display:flex; justify-content:space-between; margin-bottom:6px; }
+.report-id { font-family:var(--mono); font-size:11px; color:var(--accent); }
+.report-time { font-family:var(--mono); font-size:10px; color:var(--muted); }
+.report-disease { font-weight:500; margin-bottom:4px; }
+.report-meta { font-size:12px; color:var(--muted); }
+.report-badge {
+  display:inline-block; padding:2px 8px; border-radius:2px;
+  font-family:var(--mono); font-size:10px; margin-left:8px;
+}
+.badge-critical { background:#ff3b3b22; color:var(--red); border:1px solid #ff3b3b44; }
+.badge-high     { background:#ff8c0022; color:var(--orange); border:1px solid #ff8c0044; }
+.badge-moderate { background:#ffd60022; color:var(--yellow); border:1px solid #ffd60044; }
+.badge-low      { background:#00e67622; color:var(--green); border:1px solid #00e67644; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">OHZDIS <span>Field Reporting</span></div>
+  <div class="nav-links">
+    <a href="http://localhost:5000" >← Dashboard</a>
+    <a href="#" class="active">Field Report</a>
+    <a href="#" onclick="showTab('history')">Report History</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="page-title">OHZDIS · One Health Field Reporting System</div>
+  <div class="page-heading">Submit Field Report</div>
+  <div class="page-sub">Reports are analyzed in real-time by 43 OHZDIS modules · Data feeds directly into the live dashboard</div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('farm')">🐄 Farm / Livestock</div>
+    <div class="tab" onclick="showTab('hospital')">🏥 Hospital / Clinic</div>
+    <div class="tab" onclick="showTab('environment')">🌿 Environmental</div>
+    <div class="tab" onclick="showTab('history')">📋 Report History</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       TAB 1: FARM / LIVESTOCK
+  ══════════════════════════════════════════════ -->
+  <div id="tab-farm" class="tab-content active">
+
+    <div id="farm-alert" class="alert-indicator" style="border-color:#1a3050">
+      <div class="alert-dot" style="background:var(--muted)"></div>
+      <span style="color:var(--muted)">Fill in report details — OHZDIS will auto-assess severity</span>
+    </div>
+
+    <!-- REPORTER INFO -->
+    <div class="section">
+      <div class="section-title">Reporter Information <span class="required-tag">REQUIRED</span></div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Farm / Facility Name <span class="req">*</span></label>
+          <input type="text" id="farm-name" placeholder="e.g. Greenfield Poultry Farm #3" oninput="updateFarmAlert()">
+        </div>
+        <div class="field">
+          <label>Reporter Name <span class="req">*</span></label>
+          <input type="text" id="farm-reporter" placeholder="Your name">
+        </div>
+        <div class="field">
+          <label>Location / District <span class="req">*</span></label>
+          <input type="text" id="farm-location" placeholder="City, State/Province">
+        </div>
+        <div class="field">
+          <label>Contact Number</label>
+          <input type="tel" id="farm-contact" placeholder="+1-xxx-xxx-xxxx">
+        </div>
+      </div>
+    </div>
+
+    <!-- ANIMAL INFORMATION -->
+    <div class="section">
+      <div class="section-title">Animal Situation <span class="required-tag">REQUIRED</span></div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Species Affected <span class="req">*</span></label>
+          <select id="farm-species" onchange="updateFarmAlert()">
+            <option value="">-- Select species --</option>
+            <option value="poultry">Poultry (chickens/ducks/turkeys)</option>
+            <option value="swine">Swine / Pigs</option>
+            <option value="cattle">Cattle / Cows</option>
+            <option value="sheep_goat">Sheep / Goats</option>
+            <option value="horses">Horses / Equine</option>
+            <option value="wildlife">Wildlife (wild birds/animals)</option>
+            <option value="multiple">Multiple species</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Total Animals on Farm</label>
+          <input type="number" id="farm-total" placeholder="e.g. 5000" min="0">
+        </div>
+        <div class="field">
+          <label>Animals Affected <span class="req">*</span></label>
+          <input type="number" id="farm-affected" placeholder="e.g. 200" min="0" oninput="updateFarmAlert()">
+        </div>
+        <div class="field">
+          <label>Animals Dead</label>
+          <input type="number" id="farm-dead" placeholder="e.g. 50" min="0" oninput="updateFarmAlert()">
+        </div>
+        <div class="field">
+          <label>Date First Noticed <span class="req">*</span></label>
+          <input type="date" id="farm-date">
+        </div>
+        <div class="field">
+          <label>Onset Pattern</label>
+          <select id="farm-onset">
+            <option value="sudden">Sudden (within hours)</option>
+            <option value="rapid">Rapid (1-2 days)</option>
+            <option value="gradual">Gradual (3-7 days)</option>
+            <option value="slow">Slow (over 1 week)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- SYMPTOMS -->
+    <div class="section">
+      <div class="section-title">Clinical Signs Observed</div>
+      <div class="checklist">
+        <label class="check-item"><input type="checkbox" name="farm-sym"> <span>Sudden death / mass mortality</span></label>
+        <label class="check-item"><input type="checkbox" name="farm-sym"> <span>Respiratory distress / gasping</span></label>
+        <label class="check-item"><input type="checkbox" name="farm-sym"> <span>Neurological signs (tremors, paralysis)</span></label>
+        <label class="check-item"><input type="checkbox" name="farm-sym"> <span>Drop in egg production</span></label>
+        <label class="check-item"><input type="checkbox" name="farm-sym"> <span>Swollen head / cyanotic comb</span></label>
+        <label class="check-item"><input type="checkbox" name="farm-sym"> <span>Diarrhea / bloody discharge</span></label>
+        <label class="check-item"><input type="checkbox" name="farm-sym"> <span>Loss of appetite / lethargy</span></label>
+        <label class="check-item"><input type="checkbox" name="farm-sym"> <span>Fever / high temperature</span></label>
+        <label class="check-item"><input type="checkbox" name="farm-sym"> <span>Skin lesions / blisters</span></label>
+        <label class="check-item"><input type="checkbox" name="farm-sym"> <span>Unusual behavior</span></label>
+        <label class="check-item"><input type="checkbox" name="farm-sym"> <span>Wild birds found dead nearby</span></label>
+        <label class="check-item"><input type="checkbox" name="farm-sym"> <span>Workers also feeling unwell</span></label>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Additional observations</label>
+        <textarea id="farm-notes" placeholder="Describe any other unusual signs, environmental factors, recent visitors, feed changes, etc."></textarea>
+      </div>
+    </div>
+
+    <!-- SEVERITY -->
+    <div class="section">
+      <div class="section-title">Severity Assessment</div>
+      <div class="severity-grid">
+        <div class="sev-low">
+          <input type="radio" name="farm-severity" id="sev-low" class="severity-opt" value="low" checked>
+          <label class="severity-label" for="sev-low">LOW<br><span style="font-size:11px;font-weight:400">Mild signs<br>Few animals</span></label>
+        </div>
+        <div class="sev-mod">
+          <input type="radio" name="farm-severity" id="sev-mod" class="severity-opt" value="moderate">
+          <label class="severity-label" for="sev-mod">MODERATE<br><span style="font-size:11px;font-weight:400">Spread within farm</span></label>
+        </div>
+        <div class="sev-high">
+          <input type="radio" name="farm-severity" id="sev-high" class="severity-opt" value="high">
+          <label class="severity-label" for="sev-high">HIGH<br><span style="font-size:11px;font-weight:400">Rapid spread<br>High mortality</span></label>
+        </div>
+        <div class="sev-crit">
+          <input type="radio" name="farm-severity" id="sev-crit" class="severity-opt" value="critical">
+          <label class="severity-label" for="sev-crit">CRITICAL<br><span style="font-size:11px;font-weight:400">Mass death<br>Human symptoms</span></label>
+        </div>
+      </div>
+    </div>
+
+    <button class="submit-btn" onclick="submitFarmReport()">▶ SUBMIT TO OHZDIS — ANALYZE NOW</button>
+    <div id="farm-result" class="result-card"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       TAB 2: HOSPITAL / CLINIC
+  ══════════════════════════════════════════════ -->
+  <div id="tab-hospital" class="tab-content">
+
+    <div id="hosp-alert" class="alert-indicator" style="border-color:#1a3050">
+      <div class="alert-dot" style="background:var(--muted)"></div>
+      <span style="color:var(--muted)">Fill in patient details — OHZDIS will assess zoonotic probability</span>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Facility Information <span class="required-tag">REQUIRED</span></div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Hospital / Clinic Name <span class="req">*</span></label>
+          <input type="text" id="hosp-name" placeholder="e.g. County General Hospital">
+        </div>
+        <div class="field">
+          <label>Reporting Physician</label>
+          <input type="text" id="hosp-doctor" placeholder="Dr. Name (optional)">
+        </div>
+        <div class="field">
+          <label>Location <span class="req">*</span></label>
+          <input type="text" id="hosp-location" placeholder="City, State">
+        </div>
+        <div class="field">
+          <label>Department</label>
+          <select id="hosp-dept">
+            <option>Emergency Department</option>
+            <option>Infectious Disease</option>
+            <option>Internal Medicine</option>
+            <option>ICU / Critical Care</option>
+            <option>Pediatrics</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Case Information <span class="required-tag">REQUIRED</span></div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Number of Cases <span class="req">*</span></label>
+          <input type="number" id="hosp-cases" placeholder="e.g. 3" min="1" oninput="updateHospAlert()">
+        </div>
+        <div class="field">
+          <label>Age Group</label>
+          <select id="hosp-age">
+            <option>Mixed ages</option>
+            <option>Children (under 15)</option>
+            <option>Adults (15-64)</option>
+            <option>Elderly (65+)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Symptom Onset Date</label>
+          <input type="date" id="hosp-onset">
+        </div>
+        <div class="field">
+          <label>Hospitalized / ICU</label>
+          <input type="number" id="hosp-icu" placeholder="e.g. 1" min="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Animal / Environmental Exposure</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Animal Contact? <span class="req">*</span></label>
+          <select id="hosp-animal" onchange="updateHospAlert()">
+            <option value="">-- Unknown --</option>
+            <option value="poultry">Poultry / birds</option>
+            <option value="swine">Pigs / swine</option>
+            <option value="cattle">Cattle / cows</option>
+            <option value="bats">Bats</option>
+            <option value="rodents">Rodents</option>
+            <option value="dogs_cats">Dogs / cats</option>
+            <option value="wildlife">Wildlife</option>
+            <option value="none">No animal contact</option>
+            <option value="unknown">Unknown</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Travel History</label>
+          <input type="text" id="hosp-travel" placeholder="e.g. Vietnam, farm visit">
+        </div>
+        <div class="field">
+          <label>Occupation</label>
+          <select id="hosp-occupation">
+            <option>Unknown / Other</option>
+            <option>Farmer / Agricultural worker</option>
+            <option>Veterinarian / Animal handler</option>
+            <option>Healthcare worker</option>
+            <option>Slaughterhouse worker</option>
+            <option>Market / Pet store worker</option>
+            <option>General public</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Suspected Diagnosis</label>
+          <input type="text" id="hosp-dx" placeholder="e.g. avian influenza, unknown" oninput="updateHospAlert()">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Symptoms</div>
+      <div class="checklist">
+        <label class="check-item"><input type="checkbox" name="hosp-sym"> <span>Fever ≥38°C</span></label>
+        <label class="check-item"><input type="checkbox" name="hosp-sym"> <span>Cough / respiratory distress</span></label>
+        <label class="check-item"><input type="checkbox" name="hosp-sym"> <span>Pneumonia / infiltrates on X-ray</span></label>
+        <label class="check-item"><input type="checkbox" name="hosp-sym"> <span>Encephalitis / neurological signs</span></label>
+        <label class="check-item"><input type="checkbox" name="hosp-sym"> <span>Hemorrhagic symptoms</span></label>
+        <label class="check-item"><input type="checkbox" name="hosp-sym"> <span>Severe diarrhea / vomiting</span></label>
+        <label class="check-item"><input type="checkbox" name="hosp-sym"> <span>Skin rash / lesions</span></label>
+        <label class="check-item"><input type="checkbox" name="hosp-sym"> <span>Jaundice / liver failure</span></label>
+        <label class="check-item"><input type="checkbox" name="hosp-sym"> <span>Conjunctivitis / eye symptoms</span></label>
+        <label class="check-item"><input type="checkbox" name="hosp-sym"> <span>Lymphadenopathy</span></label>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Clinical notes</label>
+        <textarea id="hosp-notes" placeholder="Laboratory results, treatment response, epidemiological links, cluster information..."></textarea>
+      </div>
+    </div>
+
+    <button class="submit-btn danger" onclick="submitHospReport()">🚨 SUBMIT CASE — ZOONOTIC ASSESSMENT</button>
+    <div id="hosp-result" class="result-card"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       TAB 3: ENVIRONMENTAL
+  ══════════════════════════════════════════════ -->
+  <div id="tab-environment" class="tab-content">
+    <div class="section">
+      <div class="section-title">Environmental Sample Report</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Sample Type <span class="req">*</span></label>
+          <select id="env-type">
+            <option>Water (river/lake/pond)</option>
+            <option>Wastewater / sewage</option>
+            <option>Soil / sediment</option>
+            <option>Air / aerosol</option>
+            <option>Dead wildlife found</option>
+            <option>Fecal / droppings</option>
+            <option>Feed / food sample</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Collection Location <span class="req">*</span></label>
+          <input type="text" id="env-location" placeholder="GPS or description">
+        </div>
+        <div class="field">
+          <label>Collection Date</label>
+          <input type="date" id="env-date">
+        </div>
+        <div class="field">
+          <label>Number of Samples</label>
+          <input type="number" id="env-samples" placeholder="e.g. 5" min="1">
+        </div>
+        <div class="field">
+          <label>Test Result (if available)</label>
+          <select id="env-result">
+            <option>Pending / Not yet tested</option>
+            <option>Positive — pathogen detected</option>
+            <option>Negative</option>
+            <option>Inconclusive</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Pathogen Suspected</label>
+          <input type="text" id="env-pathogen" placeholder="e.g. H5N1, E.coli, Leptospira">
+        </div>
+        <div class="field form-full">
+          <label>Observations</label>
+          <textarea id="env-notes" placeholder="Describe the site, nearby farms/facilities, unusual animal mortality in the area..."></textarea>
+        </div>
+      </div>
+    </div>
+    <button class="submit-btn" style="background:var(--green);color:#000" onclick="submitEnvReport()">🌿 SUBMIT ENVIRONMENTAL REPORT</button>
+    <div id="env-result" class="result-card"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       TAB 4: REPORT HISTORY
+  ══════════════════════════════════════════════ -->
+  <div id="tab-history" class="tab-content">
+    <div class="section">
+      <div class="section-title">Recent Field Reports <span id="report-count" style="color:var(--accent)">0 reports</span></div>
+      <div id="history-list">
+        <div style="color:var(--muted);font-size:13px;padding:20px;text-align:center;font-family:var(--mono)">
+          No reports submitted yet.<br>Submit a farm or hospital report to see it here.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ── TAB SWITCHING ──
+function showTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'history') loadHistory();
+}
+
+// ── ALERT INDICATOR ──
+function updateFarmAlert() {
+  const affected = parseInt(document.getElementById('farm-affected').value) || 0;
+  const dead     = parseInt(document.getElementById('farm-dead').value) || 0;
+  const species  = document.getElementById('farm-species').value;
+  const el = document.getElementById('farm-alert');
+  const dot = el.querySelector('.alert-dot');
+  const txt = el.querySelector('span');
+
+  if (dead > 100 || (species === 'poultry' && dead > 20)) {
+    el.style.borderColor = 'var(--red)';
+    dot.style.background = 'var(--red)';
+    txt.style.color = 'var(--red)';
+    txt.textContent = '🚨 CRITICAL — Mass mortality detected. Submit immediately and contact veterinary authority.';
+  } else if (affected > 50 || dead > 10) {
+    el.style.borderColor = 'var(--orange)';
+    dot.style.background = 'var(--orange)';
+    txt.style.color = 'var(--orange)';
+    txt.textContent = '⚠ HIGH — Significant animal illness. Veterinary investigation recommended.';
+  } else if (affected > 0) {
+    el.style.borderColor = 'var(--yellow)';
+    dot.style.background = 'var(--yellow)';
+    txt.style.color = 'var(--yellow)';
+    txt.textContent = '● MODERATE — Monitor closely. Submit report for OHZDIS analysis.';
+  }
+}
+
+function updateHospAlert() {
+  const cases  = parseInt(document.getElementById('hosp-cases').value) || 0;
+  const animal = document.getElementById('hosp-animal').value;
+  const dx     = document.getElementById('hosp-dx').value.toLowerCase();
+  const el     = document.getElementById('hosp-alert');
+  const dot    = el.querySelector('.alert-dot');
+  const txt    = el.querySelector('span');
+
+  const highRiskDx = ['h5n1','avian','influenza','mpox','ebola','nipah','mers','rabies','plague'];
+  const isHighRiskDx = highRiskDx.some(k => dx.includes(k));
+
+  if (isHighRiskDx || (cases >= 3 && animal && animal !== 'none')) {
+    el.style.borderColor = 'var(--red)';
+    dot.style.background = 'var(--red)';
+    txt.style.color = 'var(--red)';
+    txt.textContent = '🚨 HIGH ZOONOTIC RISK — Immediate isolation and notification required. OHZDIS alert triggered.';
+  } else if (cases >= 2 || animal) {
+    el.style.borderColor = 'var(--orange)';
+    dot.style.background = 'var(--orange)';
+    txt.style.color = 'var(--orange)';
+    txt.textContent = '⚠ ZOONOTIC POSSIBLE — Animal contact noted. Enhanced investigation recommended.';
+  }
+}
+
+// ── RISK SCORE CALCULATOR ──
+function calcFarmRisk(data) {
+  let score = 0;
+  const mortality = data.dead / Math.max(data.affected, 1);
+  if (mortality > 0.5) score += 40;
+  else if (mortality > 0.2) score += 25;
+  else score += 10;
+  if (data.species === 'poultry') score += 20;
+  if (data.species === 'swine')   score += 15;
+  if (data.affected > 500) score += 20;
+  else if (data.affected > 100) score += 10;
+  if (data.symptoms.includes('mass mortality'))    score += 15;
+  if (data.symptoms.includes('respiratory'))       score += 10;
+  if (data.symptoms.includes('workers ill'))       score += 20;
+  return Math.min(score, 100);
+}
+
+function calcHospRisk(data) {
+  let score = 30;
+  if (data.animal && data.animal !== 'none' && data.animal !== '') score += 25;
+  if (data.animal === 'poultry') score += 15;
+  if (data.cases >= 3) score += 20;
+  const highRisk = ['h5n1','avian','influenza','mpox','ebola','nipah','mers','rabies'];
+  if (highRisk.some(k => data.suspected.toLowerCase().includes(k))) score += 25;
+  return Math.min(score, 100);
+}
+
+function riskLabel(score) {
+  if (score >= 75) return ['CRITICAL', '#ff3b3b'];
+  if (score >= 55) return ['HIGH', '#ff8c00'];
+  if (score >= 35) return ['MODERATE', '#ffd600'];
+  return ['LOW', '#00e676'];
+}
+
+// ── REPORT STORAGE ──
+let reports = JSON.parse(localStorage.getItem('ohzdis_reports') || '[]');
+
+function saveReport(report) {
+  reports.unshift(report);
+  localStorage.setItem('ohzdis_reports', JSON.stringify(reports.slice(0, 50)));
+}
+
+function loadHistory() {
+  const list = document.getElementById('history-list');
+  document.getElementById('report-count').textContent = reports.length + ' reports';
+  if (reports.length === 0) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px;text-align:center;font-family:var(--mono)">No reports submitted yet.</div>';
+    return;
+  }
+  list.innerHTML = reports.map(r => {
+    const [level, color] = riskLabel(r.risk_score || 0);
+    return `<div class="report-item">
+      <div class="report-header">
+        <span class="report-id">${r.id}</span>
+        <span class="report-time">${r.timestamp}</span>
+      </div>
+      <div class="report-disease">${r.type_label} — ${r.location}
+        <span class="report-badge badge-${level.toLowerCase()}">${level}</span>
+      </div>
+      <div class="report-meta">Risk Score: ${r.risk_score}/100 · ${r.key_finding}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── SUBMIT FARM REPORT ──
+function submitFarmReport() {
+  const name     = document.getElementById('farm-name').value;
+  const species  = document.getElementById('farm-species').value;
+  const affected = parseInt(document.getElementById('farm-affected').value) || 0;
+  const dead     = parseInt(document.getElementById('farm-dead').value) || 0;
+  const location = document.getElementById('farm-location').value;
+  const notes    = document.getElementById('farm-notes').value;
+  const severity = document.querySelector('input[name="farm-severity"]:checked')?.value || 'low';
+  const symptoms = [...document.querySelectorAll('input[name="farm-sym"]:checked')].map(c => c.parentElement.textContent.trim());
+
+  if (!name || !species || !affected || !location) {
+    alert('Please fill in required fields (Farm name, Species, Affected count, Location)');
+    return;
+  }
+
+  const risk = calcFarmRisk({dead, affected, species, symptoms});
+  const [level, color] = riskLabel(risk);
+  const id = 'FARM-' + Date.now().toString(36).toUpperCase();
+  const now = new Date().toLocaleString();
+
+  const modules = risk >= 75
+    ? ['detector.py (M10)', 'risk_calc.py (M7)', 'response.py (M19)', 'patterns.py (M9)', 'containment.py (M21)']
+    : risk >= 55
+    ? ['detector.py (M10)', 'risk_calc.py (M7)', 'analyzer.py (M8)']
+    : ['indicators.py (M5)', 'risk_calc.py (M7)'];
+
+  const report = {
+    id, timestamp: now,
+    type: 'farm', type_label: species + ' farm',
+    location, risk_score: risk,
+    key_finding: `${affected} animals affected, ${dead} dead`,
+    modules_triggered: modules
+  };
+  saveReport(report);
+
+  // Send to server if running
+  fetch('http://localhost:5000/api/field-report', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({...report, farm_name: name, species, affected, dead, symptoms, notes})
+  }).catch(() => {});
+
+  const result = document.getElementById('farm-result');
+  result.innerHTML = `
+    <div class="result-title" style="color:${color}">
+      ✓ REPORT SUBMITTED — ${level} RISK DETECTED
+    </div>
+    <div class="result-row"><span class="result-key">REPORT ID</span><span class="result-val" style="font-family:var(--mono);color:var(--accent)">${id}</span></div>
+    <div class="result-row"><span class="result-key">RISK SCORE</span><span class="result-val" style="color:${color}">${risk}/100 — ${level}</span></div>
+    <div class="result-row"><span class="result-key">FACILITY</span><span class="result-val">${name} · ${location}</span></div>
+    <div class="result-row"><span class="result-key">ANIMALS</span><span class="result-val">${affected} affected · ${dead} dead (${species})</span></div>
+    <div class="result-row"><span class="result-key">OHZDIS MODULES</span><span class="result-val" style="font-family:var(--mono);font-size:11px">${modules.join(' · ')}</span></div>
+    <div class="result-row"><span class="result-key">RECOMMENDATION</span>
+    <span class="result-val">${risk>=75 ? '🚨 CONTACT VETERINARY AUTHORITY IMMEDIATELY' : risk>=55 ? '⚠ Schedule veterinary inspection within 24h' : '✓ Monitor and resubmit if symptoms worsen'}</span></div>
+    <div class="result-row"><span class="result-key">TIMESTAMP</span><span class="result-val" style="font-family:var(--mono);font-size:11px">${now}</span></div>
+  `;
+  result.classList.add('show');
+  result.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// ── SUBMIT HOSPITAL REPORT ──
+function submitHospReport() {
+  const hosp   = document.getElementById('hosp-name').value;
+  const cases  = parseInt(document.getElementById('hosp-cases').value) || 0;
+  const animal = document.getElementById('hosp-animal').value;
+  const dx     = document.getElementById('hosp-dx').value || 'Unknown';
+  const loc    = document.getElementById('hosp-location').value;
+  const travel = document.getElementById('hosp-travel').value;
+
+  if (!hosp || !cases || !loc) {
+    alert('Please fill in required fields');
+    return;
+  }
+
+  const risk = calcHospRisk({cases, animal, suspected: dx});
+  const [level, color] = riskLabel(risk);
+  const id = 'HOSP-' + Date.now().toString(36).toUpperCase();
+  const now = new Date().toLocaleString();
+
+  const modules = risk >= 55
+    ? ['detector.py (M10)', 'risk_calc.py (M7)', 'contact_tracing.py (M22)', 'response.py (M19)']
+    : ['risk_calc.py (M7)', 'analyzer.py (M8)'];
+
+  const report = {
+    id, timestamp: now,
+    type: 'hospital', type_label: 'Hospital case',
+    location: loc, risk_score: risk,
+    key_finding: `${cases} case(s), animal: ${animal}, suspected: ${dx}`,
+    modules_triggered: modules
+  };
+  saveReport(report);
+
+  fetch('http://localhost:5000/api/field-report', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({...report, hospital: hosp, cases, animal_contact: animal, suspected_dx: dx, travel})
+  }).catch(() => {});
+
+  const result = document.getElementById('hosp-result');
+  result.innerHTML = `
+    <div class="result-title" style="color:${color}">✓ CASE SUBMITTED — ZOONOTIC RISK: ${level}</div>
+    <div class="result-row"><span class="result-key">REPORT ID</span><span class="result-val" style="font-family:var(--mono);color:var(--accent)">${id}</span></div>
+    <div class="result-row"><span class="result-key">ZOONOTIC RISK SCORE</span><span class="result-val" style="color:${color}">${risk}/100 — ${level}</span></div>
+    <div class="result-row"><span class="result-key">FACILITY</span><span class="result-val">${hosp} · ${loc}</span></div>
+    <div class="result-row"><span class="result-key">CASES</span><span class="result-val">${cases} · Animal contact: ${animal||'unknown'} · Suspected: ${dx}</span></div>
+    <div class="result-row"><span class="result-key">OHZDIS MODULES</span><span class="result-val" style="font-family:var(--mono);font-size:11px">${modules.join(' · ')}</span></div>
+    <div class="result-row"><span class="result-key">RECOMMENDATION</span>
+    <span class="result-val">${risk>=75 ? '🚨 ISOLATE PATIENT — Notify public health authority immediately' : risk>=55 ? '⚠ Collect specimens — Test for zoonotic pathogens' : '✓ Monitor — Standard infection control measures'}</span></div>
+    <div class="result-row"><span class="result-key">TIMESTAMP</span><span class="result-val" style="font-family:var(--mono);font-size:11px">${now}</span></div>
+  `;
+  result.classList.add('show');
+  result.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// ── SUBMIT ENV REPORT ──
+function submitEnvReport() {
+  const type     = document.getElementById('env-type').value;
+  const location = document.getElementById('env-location').value;
+  const result_v = document.getElementById('env-result').value;
+  const pathogen = document.getElementById('env-pathogen').value;
+
+  if (!location) { alert('Please enter collection location'); return; }
+
+  const risk = result_v.includes('Positive') ? 65 : 30;
+  const [level, color] = riskLabel(risk);
+  const id = 'ENV-' + Date.now().toString(36).toUpperCase();
+  const now = new Date().toLocaleString();
+
+  const report = {
+    id, timestamp: now,
+    type: 'environment', type_label: type,
+    location, risk_score: risk,
+    key_finding: `${type} · Result: ${result_v} · Pathogen: ${pathogen||'unknown'}`,
+    modules_triggered: ['environment.py (M3)', 'analyzer.py (M8)']
+  };
+  saveReport(report);
+
+  fetch('http://localhost:5000/api/field-report', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({...report, sample_type: type, test_result: result_v, pathogen})
+  }).catch(() => {});
+
+  const res = document.getElementById('env-result');
+  res.innerHTML = `
+    <div class="result-title" style="color:${color}">✓ ENVIRONMENTAL REPORT SUBMITTED — ${level}</div>
+    <div class="result-row"><span class="result-key">REPORT ID</span><span class="result-val" style="font-family:var(--mono);color:var(--accent)">${id}</span></div>
+    <div class="result-row"><span class="result-key">SAMPLE TYPE</span><span class="result-val">${type}</span></div>
+    <div class="result-row"><span class="result-key">LOCATION</span><span class="result-val">${location}</span></div>
+    <div class="result-row"><span class="result-key">RESULT</span><span class="result-val" style="color:${color}">${result_v}</span></div>
+    <div class="result-row"><span class="result-key">TIMESTAMP</span><span class="result-val" style="font-family:var(--mono);font-size:11px">${now}</span></div>
+  `;
+  res.classList.add('show');
+  res.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// Set today as default date
+document.querySelectorAll('input[type="date"]').forEach(d => {
+  d.value = new Date().toISOString().split('T')[0];
+});
+</script>
+</body>
+</html>

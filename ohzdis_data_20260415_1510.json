@@ -1,0 +1,98 @@
+{
+  "timestamp": "2026-04-15T15:10:53.683483",
+  "who_reports": [
+    {
+      "source": "WHO",
+      "title": "After three years of conflict, Sudan faces a deeper health crisis",
+      "date": "Tue, 14 Ap",
+      "is_zoonotic": false
+    },
+    {
+      "source": "WHO",
+      "title": "First-ever WHO Forum unites 800+ Collaborating Centres for stronger scientific collaboration",
+      "date": "Thu, 09 Ap",
+      "is_zoonotic": false
+    },
+    {
+      "source": "WHO",
+      "title": "WHO and France shift One Health vision to action with new high-impact initiatives",
+      "date": "Tue, 07 Ap",
+      "is_zoonotic": false
+    },
+    {
+      "source": "WHO",
+      "title": "WHO calls for action: \u201cTogether for health. Stand with science.\u201d to mark World Health Day",
+      "date": "Mon, 06 Ap",
+      "is_zoonotic": false
+    },
+    {
+      "source": "WHO",
+      "title": "WHO Member States agree to extend negotiations on key annex to the Pandemic Agreement",
+      "date": "Sat, 28 Ma",
+      "is_zoonotic": false
+    },
+    {
+      "source": "WHO",
+      "title": "Encouraging progress in inclusive health policies for refugees and migrants",
+      "date": "Thu, 26 Ma",
+      "is_zoonotic": false
+    },
+    {
+      "source": "WHO",
+      "title": "WHO recommends new diagnostic tools to help end TB",
+      "date": "Tue, 24 Ma",
+      "is_zoonotic": false
+    },
+    {
+      "source": "WHO",
+      "title": "Progress in reducing child deaths slows as 4.9 million children die before age five",
+      "date": "Wed, 18 Ma",
+      "is_zoonotic": false
+    },
+    {
+      "source": "WHO",
+      "title": "Conflict deepens health crisis across Middle East, WHO says",
+      "date": "Wed, 11 Ma",
+      "is_zoonotic": false
+    },
+    {
+      "source": "WHO",
+      "title": "Chile becomes the first country in the Americas to be verified by WHO for the elimination of leprosy",
+      "date": "Wed, 04 Ma",
+      "is_zoonotic": false
+    }
+  ],
+  "eid_articles": [
+    {
+      "source": "CDC_EID",
+      "title": "Respirable Aerosol Production and Reduction of Avian Influenza Transmission Risk during Chicken Processing, Bangladesh",
+      "date": "Fri, 10 Apr 2026 04:00:00 GMT",
+      "is_zoonotic": true
+    },
+    {
+      "source": "CDC_EID",
+      "title": "Treatment of Severe Ocular Mpox with Cidofovir and Tecovirimat",
+      "date": "Fri, 10 Apr 2026 04:00:00 GMT",
+      "is_zoonotic": true
+    },
+    {
+      "source": "CDC_EID",
+      "title": "Ecologic Investigative Strategies to Determine Human Plague Exposure Sites, United States, 1991\u20132018",
+      "date": "Mon, 06 Apr 2026 04:00:00 GMT",
+      "is_zoonotic": true
+    },
+    {
+      "source": "CDC_EID",
+      "title": "Tropism and Replication Competence of Cattle Influenza A(H5N1) Genotype B3.13 Virus in Human Bronchus and Lung Tissue",
+      "date": "Wed, 01 Apr 2026 04:00:00 GMT",
+      "is_zoonotic": true
+    }
+  ],
+  "cdc_records": 10,
+  "triggers": [
+    {
+      "module": "analyzer.py (M8)",
+      "reason": "New research signal"
+    }
+  ]
+}
