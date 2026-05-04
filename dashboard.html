@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OHZDIS — One Health Zoonotic Disease Intelligence System</title>
+<title>Guardian Watch (OHZDIS) — One Health Zoonotic Disease Intelligence System</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -358,7 +358,7 @@
 
 <!-- TOP BAR -->
 <div class="topbar">
-  <div class="logo">OHZDIS <span>v4.3.0</span></div>
+  <div class="logo">Guardian Watch <span>(OHZDIS) v4.3.0</span></div>
   <div class="topbar-right">
     <span><span class="live-dot"></span>LIVE</span>
     <span id="clock">--:--:-- UTC</span>
@@ -493,7 +493,7 @@
       <span class="disease-name">Dengue Serotype 3</span>
       <span class="region-tag">Pacific Islands</span>
       <div class="risk-bar"><div class="risk-fill" style="width:52%;background:var(--orange)"></div></div>
-      <span style="font-family:var(--mono);color:var(--orange)">—</span>
+      <span style="font-family:var(--mono);color:var(--orange)">&mdash;</span>
     </div>
     <div class="threat-row">
       <span class="level-dot l-moderate"></span>
@@ -636,13 +636,13 @@
 
 <!-- FOOTER -->
 <div class="footer">
-  <span>OHZDIS v4.3.0 · One Health Zoonotic Disease Intelligence System</span>
+  <span>Guardian Watch (OHZDIS) v4.3.0 · One Health Zoonotic Disease Intelligence System</span>
   <span>Data: CDC · WHO · EPA · USDA · disease.sh</span>
   <span id="lastUpdate">Last update: --</span>
 </div>
 
 <script>
-// ── CLOCK ──
+// CLOCK
 function updateClock() {
   const now = new Date();
   document.getElementById('clock').textContent =
@@ -653,7 +653,7 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// ── MODULE GRID ──
+// MODULE GRID
 const moduleNames = [
   'human','animal','environ','bridge','indicators','standard',
   'risk_calc','analyzer','patterns','detector','correlat','predict',
@@ -672,7 +672,7 @@ moduleNames.forEach((name, i) => {
   grid.appendChild(cell);
 });
 
-// ── EPIDEMIC CURVE ──
+// EPIDEMIC CURVE
 const epicurveCtx = document.getElementById('epicurve').getContext('2d');
 const days = Array.from({length:31}, (_,i) => {
   const d = new Date(); d.setDate(d.getDate()-30+i);
@@ -702,7 +702,7 @@ new Chart(epicurveCtx, {
   }
 });
 
-// ── FORECAST ──
+// FORECAST
 const forecastCtx = document.getElementById('forecast').getContext('2d');
 const futureLabels = ['Now', '+7d', '+14d', '+21d', '+28d', '+30d'];
 new Chart(forecastCtx, {
@@ -726,7 +726,7 @@ new Chart(forecastCtx, {
   }
 });
 
-// ── ONE HEALTH INDEX ──
+// ONE HEALTH INDEX
 const ohCtx = document.getElementById('ohindex').getContext('2d');
 new Chart(ohCtx, {
   type: 'bar',
