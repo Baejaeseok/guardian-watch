@@ -1,11 +1,11 @@
 """
-OHZDIS Web Server
+Guardian Watch (OHZDIS) Web Server
 Connects data_collector.py → real-time dashboard
 Run: python server.py
 Open: http://localhost:5000
 """
 
-from flask import Flask, jsonify, render_template_string
+from flask import Flask, jsonify, render_template_string, request
 import json, os, subprocess, threading, time
 from datetime import datetime
 
@@ -43,7 +43,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>OHZDIS Live Dashboard</title>
+<title>Guardian Watch (OHZDIS) Live Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -107,7 +107,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
 <body>
 
 <div class="topbar">
-  <div class="logo">OHZDIS <span>v4.3.0 · LIVE</span></div>
+  <div class="logo">Guardian Watch <span>(OHZDIS) v4.3.0 · LIVE</span></div>
   <div class="topbar-right">
     <span><span class="live-dot"></span>REAL-TIME</span>
     <span id="clock">--:--:-- UTC</span>
@@ -146,7 +146,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
   </div>
 
   <div class="card stat-orange">
-    <div class="card-title">OHZDIS TRIGGERS <span class="badge badge-orange" id="triggerBadge">-</span></div>
+    <div class="card-title">GUARDIAN WATCH TRIGGERS <span class="badge badge-orange" id="triggerBadge">-</span></div>
     <div class="stat-big" id="triggerCount">-</div>
     <div class="stat-label">Modules auto-activated</div>
     <div class="stat-delta" id="triggerList" style="color:var(--orange)">-</div>
@@ -181,7 +181,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
 
   <!-- TRIGGERED MODULES -->
   <div class="card span2">
-    <div class="card-title">OHZDIS MODULES TRIGGERED <span class="badge badge-orange" id="moduleBadge">-</span></div>
+    <div class="card-title">GUARDIAN WATCH MODULES TRIGGERED <span class="badge badge-orange" id="moduleBadge">-</span></div>
     <div id="moduleList"><div class="loading">Awaiting data...</div></div>
   </div>
 
@@ -217,7 +217,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13
 </div>
 
 <div class="footer">
-  <span>OHZDIS v4.3.0 · One Health Zoonotic Disease Intelligence System</span>
+  <span>Guardian Watch (OHZDIS) v4.3.0 · One Health Zoonotic Disease Intelligence System</span>
   <span>171 diseases monitored · 385 keywords · 43 modules</span>
   <span id="footerUpdate">Auto-refresh: every 60 seconds</span>
 </div>
@@ -749,7 +749,7 @@ def api_field_reports():
 # ── MAIN ─────────────────────────────────────────────────────
 if __name__ == "__main__":
     print("=" * 60)
-    print("  OHZDIS Web Server v4.3.0")
+    print("  Guardian Watch (OHZDIS) Web Server v4.3.0")
     print("  Dashboard: http://localhost:5000")
     print("=" * 60)
     print("\nStarting initial data collection...")
